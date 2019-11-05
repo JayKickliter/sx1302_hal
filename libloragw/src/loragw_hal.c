@@ -67,17 +67,17 @@ License: Revised BSD License, see LICENSE.TXT file include in the project
 
 #define TRACE()             fprintf(stderr, "@ %s %d\n", __FUNCTION__, __LINE__);
 
-#define CONTEXT_STARTED         lgw_context.is_started
-#define CONTEXT_SPI             lgw_context.board_cfg.spidev_path
-#define CONTEXT_LWAN_PUBLIC     lgw_context.board_cfg.lorawan_public
-#define CONTEXT_BOARD           lgw_context.board_cfg
-#define CONTEXT_RF_CHAIN        lgw_context.rf_chain_cfg
-#define CONTEXT_IF_CHAIN        lgw_context.if_chain_cfg
-#define CONTEXT_LORA_SERVICE    lgw_context.lora_service_cfg
-#define CONTEXT_FSK             lgw_context.fsk_cfg
-#define CONTEXT_TX_GAIN_LUT     lgw_context.tx_gain_lut
-#define CONTEXT_TIMESTAMP       lgw_context.timestamp_cfg
-#define CONTEXT_DEBUG           lgw_context.debug_cfg
+#define CONTEXT_STARTED         ctx->is_started
+#define CONTEXT_SPI             ctx->board_cfg.spidev_path
+#define CONTEXT_LWAN_PUBLIC     ctx->board_cfg.lorawan_public
+#define CONTEXT_BOARD           ctx->board_cfg
+#define CONTEXT_RF_CHAIN        ctx->rf_chain_cfg
+#define CONTEXT_IF_CHAIN        ctx->if_chain_cfg
+#define CONTEXT_LORA_SERVICE    ctx->lora_service_cfg
+#define CONTEXT_FSK             ctx->fsk_cfg
+#define CONTEXT_TX_GAIN_LUT     ctx->tx_gain_lut
+#define CONTEXT_TIMESTAMP       ctx->timestamp_cfg
+#define CONTEXT_DEBUG           ctx->debug_cfg
 
 /* -------------------------------------------------------------------------- */
 /* --- PRIVATE CONSTANTS & TYPES -------------------------------------------- */
@@ -104,6 +104,7 @@ const char lgw_version_string[] = "Version: " LIBLORAGW_VERSION ";";
 #include "agc_fw_sx1250.var"    /* text_agc_sx1250_05_Juillet_2019_3 */
 #include "agc_fw_sx1257.var"    /* text_agc_sx1257_19_Nov_1 */
 
+#if 0
 /*
 The following static variable holds the gateway configuration provided by the
 user that need to be propagated in the drivers.
@@ -184,6 +185,8 @@ FILE * log_file = NULL;
 static int     ts_fd = -1;
 static uint8_t ts_addr = 0xFF;
 
+#endif
+
 /* -------------------------------------------------------------------------- */
 /* --- PRIVATE FUNCTIONS DECLARATION ---------------------------------------- */
 
@@ -221,7 +224,7 @@ int32_t lgw_sf_getval(int x) {
 /* -------------------------------------------------------------------------- */
 /* --- PUBLIC FUNCTIONS DEFINITION ------------------------------------------ */
 
-int lgw_board_setconf(struct lgw_conf_board_s * conf) {
+int lgw_board_setconf(lgw_context_t const * ctx, lgw_context_t const * ctx, struct lgw_conf_board_s * conf) {
     CHECK_NULL(conf);
 
     /* check if the concentrator is running */
@@ -247,7 +250,7 @@ int lgw_board_setconf(struct lgw_conf_board_s * conf) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_rxrf_setconf(uint8_t rf_chain, struct lgw_conf_rxrf_s * conf) {
+int lgw_rxrf_setconf(lgw_context_t const * ctx, uint8_t rf_chain, struct lgw_conf_rxrf_s * conf) {
     CHECK_NULL(conf);
 
     /* check if the concentrator is running */
@@ -304,7 +307,7 @@ int lgw_rxrf_setconf(uint8_t rf_chain, struct lgw_conf_rxrf_s * conf) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_rxif_setconf(uint8_t if_chain, struct lgw_conf_rxif_s * conf) {
+int lgw_rxif_setconf(lgw_context_t const * ctx, uint8_t if_chain, struct lgw_conf_rxif_s * conf) {
     int32_t bw_hz;
     uint32_t rf_rx_bandwidth;
 
@@ -472,7 +475,7 @@ int lgw_rxif_setconf(uint8_t if_chain, struct lgw_conf_rxif_s * conf) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_txgain_setconf(uint8_t rf_chain, struct lgw_tx_gain_lut_s * conf) {
+int lgw_txgain_setconf(lgw_context_t const * ctx, uint8_t rf_chain, struct lgw_tx_gain_lut_s * conf) {
     int i;
 
     CHECK_NULL(conf);
@@ -527,7 +530,7 @@ int lgw_txgain_setconf(uint8_t rf_chain, struct lgw_tx_gain_lut_s * conf) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_timestamp_setconf(struct lgw_conf_timestamp_s * conf) {
+int lgw_timestamp_setconf(lgw_context_t const * ctx, struct lgw_conf_timestamp_s * conf) {
     CHECK_NULL(conf);
 
     CONTEXT_TIMESTAMP.enable_precision_ts = conf->enable_precision_ts;
@@ -539,7 +542,7 @@ int lgw_timestamp_setconf(struct lgw_conf_timestamp_s * conf) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_debug_setconf(struct lgw_conf_debug_s * conf) {
+int lgw_debug_setconf(lgw_context_t const * ctx, struct lgw_conf_debug_s * conf) {
     int i;
 
     CHECK_NULL(conf);
@@ -567,7 +570,7 @@ int lgw_debug_setconf(struct lgw_conf_debug_s * conf) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_start(void) {
+int lgw_start(lgw_context_t const * ctx) {
     int i, err;
     int reg_stat;
 
@@ -742,7 +745,7 @@ int lgw_start(void) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_stop(void) {
+int lgw_stop(lgw_context_t const * ctx) {
     int i, err;
 
     DEBUG_MSG("INFO: aborting TX\n");
@@ -771,7 +774,7 @@ int lgw_stop(void) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_receive(uint8_t max_pkt, struct lgw_pkt_rx_s *pkt_data) {
+int lgw_receive(uint8_lgw_context_t const * ctx, t max_pkt, struct lgw_pkt_rx_s *pkt_data) {
     int res;
     uint8_t  nb_pkt_fetched = 0;
     uint16_t nb_pkt_found = 0;
@@ -832,7 +835,7 @@ int lgw_receive(uint8_t max_pkt, struct lgw_pkt_rx_s *pkt_data) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_send(struct lgw_pkt_tx_s * pkt_data) {
+int lgw_send(lgw_context_t const * ctx, struct lgw_pkt_tx_s * pkt_data) {
     /* check if the concentrator is running */
     if (CONTEXT_STARTED == false) {
         DEBUG_MSG("ERROR: CONCENTRATOR IS NOT RUNNING, START IT BEFORE SENDING\n");
@@ -902,7 +905,7 @@ int lgw_send(struct lgw_pkt_tx_s * pkt_data) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_status(uint8_t rf_chain, uint8_t select, uint8_t *code) {
+int lgw_status(lgw_context_t const * ctx, uint8_t rf_chain, uint8_t select, uint8_t *code) {
     /* check input variables */
     CHECK_NULL(code);
     if (rf_chain >= LGW_RF_CHAIN_NB) {
@@ -934,7 +937,7 @@ int lgw_status(uint8_t rf_chain, uint8_t select, uint8_t *code) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_abort_tx(uint8_t rf_chain) {
+int lgw_abort_tx(lgw_context_t const * ctx, uint8_t rf_chain) {
     /* check input variables */
     if (rf_chain >= LGW_RF_CHAIN_NB) {
         DEBUG_MSG("ERROR: NOT A VALID RF_CHAIN NUMBER\n");
@@ -947,7 +950,7 @@ int lgw_abort_tx(uint8_t rf_chain) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_get_trigcnt(uint32_t* trig_cnt_us) {
+int lgw_get_trigcnt(lgw_context_t const * ctx, uint32_t* trig_cnt_us) {
     CHECK_NULL(trig_cnt_us);
 
     *trig_cnt_us = sx1302_timestamp_counter(true);
@@ -957,7 +960,7 @@ int lgw_get_trigcnt(uint32_t* trig_cnt_us) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_get_instcnt(uint32_t* inst_cnt_us) {
+int lgw_get_instcnt(lgw_context_t const * ctx, uint32_t* inst_cnt_us) {
     CHECK_NULL(inst_cnt_us);
 
     *inst_cnt_us = sx1302_timestamp_counter(false);
@@ -967,7 +970,7 @@ int lgw_get_instcnt(uint32_t* inst_cnt_us) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_get_eui(uint64_t* eui) {
+int lgw_get_eui(lgw_context_t const * ctx, uint64_t* eui) {
     CHECK_NULL(eui);
 
     if (sx1302_get_eui(eui) != LGW_REG_SUCCESS) {
@@ -996,7 +999,7 @@ const char* lgw_version_info() {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-uint32_t lgw_time_on_air(struct lgw_pkt_tx_s *packet) {
+uint32_t lgw_time_on_air(lgw_context_t const * ctx, struct lgw_pkt_tx_s *packet) {
     int32_t val;
     uint8_t SF, H, DE;
     uint16_t BW;
